@@ -1,10 +1,17 @@
 # How to use File Notification Message Distribution with the Client File Store (CFS) Service
+- version: 1.0.0
+- Last update: January 2023
+- Environment: Python
+- Prerequisite: [Access to RDP credentials](#prerequisite)
+
+Example Code Disclaimer:
+ALL EXAMPLE CODE IS PROVIDED ON AN “AS IS” AND “AS AVAILABLE” BASIS FOR ILLUSTRATIVE PURPOSES ONLY. LSEG MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, AS TO THE OPERATION OF THE EXAMPLE CODE, OR THE INFORMATION, CONTENT, OR MATERIALS USED IN CONNECTION WITH THE EXAMPLE CODE. YOU EXPRESSLY AGREE THAT YOUR USE OF THE EXAMPLE CODE IS AT YOUR SOLE RISK.
 
 ## Overview
 
 The Data Platform Client File Store (CFS) Service offers an alternative way to be notified when the new FileSet available through Amazon Simple Queue Service (SQS). The consumers do not need to polling request to fileset API, but continuously monitor the queue and received all required information (including file id) and able to download new file directly through file stream api instead.
 
-This article is the part 2 of the [A Step-By-Step Workflow Guide for RDP Client File Store (CFS) API](https://developers.lseg.com/en/article-catalog/article/a-step-by-step-workflow-guide-for-rdp-client-file-store--cfs--ap) article. This article describes how to use the Data Platform's [Message services delivery API](https://developers.lseg.com/en/article-catalog/article/alerts-delivery-mechanism-in-rdp) to notified consumers (aka subscribers) when the new bulk file is available on the CFS API, and demonstrate with the ready-to-use example tool.
+This project is the part 2 of the [A Step-By-Step Workflow Guide for RDP Client File Store (CFS) API](https://developers.lseg.com/en/article-catalog/article/a-step-by-step-workflow-guide-for-rdp-client-file-store--cfs--ap) project. This project describes how to use the Data Platform's [Message services delivery API](https://developers.lseg.com/en/article-catalog/article/alerts-delivery-mechanism-in-rdp) to notified consumers (aka subscribers) when the new bulk file is available on the CFS API, and demonstrate with the ready-to-use example tool.
 
 # <a id="whatis_rdp"></a>What is Refinitiv Data Platform (RDP) APIs?
 
@@ -30,7 +37,6 @@ For more detail regarding the Refinitiv Data Platform, please see the following 
 
 CFS is engineered as a self-service metadata tool intend for publishers and subscribers. CFS provides bucket and file-set to organize files to simplify the interaction with publishers or subscribers CFS doesn't store file directly. Actual files are store in publisher-supplied. AWS S3 only one type storage that supported by current CFS.
 
-
 ## <a id="what_is_msd"></a>What is Message Distribution Service?
 
 The Message Distribution Service is a service that allows customers to subscribe to message queue-based interfaces to retrieve non-real-time content changes for all datasets. The Refinitiv Data Platform currently utilizes [AWS SQS](https://aws.amazon.com/sqs/) as a main message queue technology.
@@ -49,7 +55,7 @@ File Notification service lets the clients subscribes for the notification of th
 
 ### File Notification Message Distribution Workflow Step-By-Step
 
-Let's drive into more technical detail about the File Notification Message Distribution workflow. The application steps are as follows:
+Let's drive into more technical detail about the File Notification Message Distribution workflow. The consumer (subscriber) application needs to follow though the activities below in order to receive file notification and download CFS file.
 
 1. Subscribers make a subscription to API https://api.refinitiv.com/message-services/v1/file-store/subscriptions endpoint by specified CFS content that they interest. E.g. Bucket Name, Package Id, Fileset Attribute.
 2. Subscribers received 
@@ -59,17 +65,21 @@ Let's drive into more technical detail about the File Notification Message Distr
 3. Subscribers request credential to access the provided SQS.
 4. Subscribers continually checking the SQS in short interval and as soon as the new FileSet that matched with the criteria available message will be available in user specific SQS
 5. Fetch message from SQS and decrypt the message to see FileSet / File detail
-6. Call CFS API to generate the pre-signed URL to download the file.
+6. Call CFS API endpoint to generate the pre-signed URL to download the file.
 
 ## File Notification Message Distribution Tools
 
-### <a id="prerequisite"></a>Prerequisite
+There are [File Notification Message Distribution Tools](https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools) that do all the above steps and help you download the file to the specified location automatically. 
 
-There is some prerequisite, dependencies, and libraries that the tool is needed.
+![figure-3](images/04_tools_flow.png "Tools workflow")
+
+The Tools are based on full-function Python scripts and require the following prerequisite, dependencies as follows:
+
+### <a id="prerequisite"></a>Prerequisite
 
 #### Access to the RDP with the your desire CFS file permission
 
-This project uses RDP access credentials with the CFS file permission. You need both RDP User-ID (email base) and Machine-ID (GE-A-XXXXX) user types.
+The tools uses RDP access credentials with the CFS file permission. You need both RDP User-ID (email base) and Machine-ID (GE-A-XXXXX) user types.
 
 - **User-ID**: Identifier for user allowing access to contracted content and APIs on the API Playground page (https://apidocs.refinitiv.com/Apps/ApiDocs) or Bulk UI via Workspace/Eikon Desktop. It normally is email address of user (example: sample@lseg.com).
 - **Machine ID**:  Identifier for machine allowing access and run this tool or any automate applications. It normally is a username with "GE-A-XXXXXXXX" format.
@@ -80,247 +90,15 @@ You can contact your LSEG representative to help you with the RDP account and se
 
 #### Internet Access
 
-The tool needs to download the required libraries from the https://pypi.org/ Python package repository website. The CFS file is also available on AWS Cloud, so you need internat access to use the tool.
+The tools need to download the required libraries from the https://pypi.org/ Python package repository website. The CFS file is also available on AWS Cloud, so you need internat access to use the tool.
 
 #### Python
 
-This project uses [Python](https://www.python.org/) programming language and runtime. 
+The tools uses [Python](https://www.python.org/) runtime. The Python [Anaconda](https://www.anaconda.com/distribution/) or [MiniConda](https://docs.conda.io/en/latest/miniconda.html) distribution/package manager is also supported.
 
-The Python [Anaconda](https://www.anaconda.com/distribution/) or [MiniConda](https://docs.conda.io/en/latest/miniconda.html) distribution/package manager is also supported.
+### <a id="how_to_run"></a>How to run the Tools
 
-### <a id="how_to_run"></a>How to run the application
-
-The first step is to unzip or download the example project folder from [GitHub](https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools) into a directory of your choice, then set up Python environment based on your preference.
-
-You can download the tool via the following Git command or manual download from the page.
-
-#### Download via Git
-
-Firstly, you need to install Git tool on your machine. You can find more detail about how to install Git from the following resources:
-* [Git-SCM website](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-* [GitHub Desktop website](https://desktop.github.com/).
-
-Once the installation is succeed, please open a Git Bash tool on the prefer folder and run the following command:
-
-```bash
-git clone https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools.git
-```
-#### Manual Download
-
-Please open the [https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools/tree/main](https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools/tree/main) URL on your prefer web browser, click on the "Code" button and choose "Download ZIP" option.
-
-![figure-3](images/03_download.png "how to download project manually")
-
-### <a id="tool_setup"></a>Tool Setup with Python
-
-1. If you didn't have python3.7 or python 3.9 yet please install it via https://www.python.org/downloads/ website
-2. You can follow https://wiki.python.org/moin/BeginnersGuide/Download and https://realpython.com/installing-python/ websites for the installation guides.
-3. Please verify python version before you proceed the next step (Readme file currently support installation python3.7 and python3.9)
-   
-      ```bash
-      python --version
-      ```   
-4. Run command to install python libraries
-      
-      // For python3.7 
-      ```bash
-      python3 -m pip install -r python37_libs.txt
-      ```
-      // For python 3.9
-      ```bash
-      python3 -m pip install -r python39_libs.txt
-      ```
-5. If you encounter error ModuleNotFoundError: No module named 'Crypto' please follow step below
-      // This step is used for python3.7 troubleshooting
-      ```bash
-      python -m pip uninstall crypto 
-      python -m pip uninstall pycrypto
-      python -m pip install -r python37_libs.txt
-      ```
-6. **Go to folder name msg_dist_tools** and open file **credentials.ini** and specify your RDP **Machine-ID credential type** information as follows (If you don't know information please contact your LSEG representative)
-      ```ini
-      [RDP]
-      username = <RDP Machine-ID GE-A-XXXXXXXX>
-      password = <RDP Machine-ID password>
-      clientId = <RDP App Key>
-      ```
-      **Caution**: Please **do not** set your RDP User-ID (email) credential type or the same user to access Workspace here.
-7. Run Program please check Tool Description section
-8. Messages will be stored under metadata/<subscriptionId> folder
-9. FileNoti file will be downloaded into your destination folder
-
-### <a id="tool_setup"></a>Tool Setup with Anaconda/MiniConda
-
-1. Download Python [Anaconda](https://www.anaconda.com/distribution/) or [MiniConda](https://docs.conda.io/en/latest/miniconda.html) distribution/package manager and install it in your local machine.
-2. Open Anaconda Prompt and go to the project's folder.
-3. Run the following command in the Anaconda Prompt application to create a Conda environment named *CFS_FileNoti* for the project.
-    ``` bash
-    (base) $>conda create --name CFS_FileNoti python=3.9
-    ```
-4. Once the environment is created, activate a Conda *CFS_FileNoti* environment with this command in Anaconda Prompt.
-    ``` bash
-    (base) $>conda activate CFS_FileNoti
-    ```
-5. Run the following command to the dependencies in the *CFS_FileNoti* environment 
-    ``` bash
-    (CFS_FileNoti) $>pip install -r python39_libs.txt
-    ```
-6. **Go to folder name msg_dist_tools** and open file **credentials.ini** and specify your RDP **Machine-ID credential type** information as follows (If you don't know information please contact your LSEG representative)
-      ```ini
-      [RDP]
-      username = <RDP Machine-ID GE-A-XXXXXXXX>
-      password = <RDP Machine-ID password>
-      clientId = <RDP App Key>
-      ```
-      **Caution**: Please **do not** set your RDP User-ID (email) credential type or the same user to access Workspace here.
-7. Run Program please check Tool Description section
-8. Messages will be stored under metadata/<subscriptionId> folder
-9. FileNoti file will be downloaded into your destination folder
-
-### <a id="tool_run"></a>Tools Running Description
-
-Firstly, you need to set Bucket-name and Package Id (if you have the package Id information) in the json file in the **msg_dist_tools/requestBody** folder.
-
-Example: *singleBucketFilter.json*
-```json
-{
-    "transport": {
-        "transportType": "AWS-SQS"
-    },
-    "query": {
-        "bool": {
-            "must": [
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.bucketName": "{bucket-name}"
-                    }
-                },
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.status": "READY"
-                    }
-                }
-            ]
-        }
-    }
-}
-```
-
-Example: *singlePackageIdFilter.json*
-```json
-{
-    "transport": {
-        "transportType": "AWS-SQS"
-    },
-    "query": {
-        "bool": {
-            "must": [
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.packageId": "{package id}"
-                    }
-                },
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.status": "READY"
-                    }
-                }
-            ]
-        }
-    }
-}
-```
-
-Example: *bucketAndPackageIdFilter.json*
-```json
-{
-    "transport": {
-        "transportType": "AWS-SQS"
-    },
-    "query": {
-        "bool": {
-            "must": [
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.bucketName": "{bucket-name}"
-                    }
-                },
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.packageId": "{package id}"
-                    }
-                },
-                {
-                    "term": {
-                        "payload.FileStoreNotification.fileset.status": "READY"
-                    }
-                }
-            ]
-        }
-    }
-}
-```
-
-Please contact your LSEG representative about your Bucket-name and Package ID.
-
-The next step is creating a new subscription and specify input json file with the following command:
-
-```bash
-python fileNotiMessages.py -c -i requestBody/<json file>
-```
-Example: I am demonstrating with singleBucketFilter.json and **Test_CFS_BucketTiming** test bucket-name and **4fbb-f1b5-d428da4f-9392-28214215d35a** test package Id as an example data set.
-
-```bash
-python fileNotiMessages.py -c -i requestBody/bucketAndPackageIdFilter.json
-```
-Result:
-```bash
-log_path log\app.log, log_dir log
-log_path log\error.log, log_dir log
-Program is started
-\ 2024-01-18 18:04:20,861 INFO Successfully get current user: {GE-A-XXXXXXXX}
-2024-01-18 18:04:20,861 INFO input parameter = {'get': False, 'create': True, 'poll': False, 'modify': False, 'delete': False, 'subscriptionId': None, 'input': 'requestBody/bucketAndPackageIdFilter.json', 'destinationFolder': None, 'queue': False, 'recovery': False}
-2024-01-18 18:04:20,861 INFO
-
-2024-01-18 18:04:20,861 INFO *************************************************************************
-2024-01-18 18:04:20,861 INFO ******************* Create new subscription *****************************
-2024-01-18 18:04:20,861 INFO *************************************************************************
-2024-01-18 18:04:20,861 INFO Request URL: https://api.refinitiv.com/message-services/v1/file-store/subscriptions
-2024-01-18 18:04:20,877 INFO Request Body: {'transport': {'transportType': 'AWS-SQS'}, 'query': {'bool': {'must': [{'term': {'payload.FileStoreNotification.fileset.bucketName': 'Test_CFS_BucketTiming'}}, {'term': {'payload.FileStoreNotification.fileset.packageId': '4000-04ea-7d282653-8e6d-810dda18956d'}}, {'term': {'payload.FileStoreNotification.fileset.status': 'READY'}}]}}}
-/ 2024-01-18 18:04:22,912 INFO -------------------- Successfully create subscription ----------------------
-2024-01-18 18:04:22,928 INFO subscriptionID: b6447a1a-da72-4fbd-b2f5-96185d72eb21
-2024-01-18 18:04:22,928 INFO transportEndpoint: https://sqs.us-east-1.amazonaws.com/642157181326/sqs-edsalerts-main-prod-usersqs-b6447a1a-da72-4fbd-b2f5-96185d72eb21
-2024-01-18 18:04:22,928 INFO cryptographyKey: iT4kQg+7eQnYhphLN8FbxrfeTXHLGKo0dbHapGm32pQ=
-2024-01-18 18:04:22,928 INFO query: {'bool': {'must': [{'term': {'payload.FileStoreNotification.fileset.bucketName': 'Test_CFS_BucketTiming'}}, {'term': {'payload.FileStoreNotification.fileset.packageId': '4000-04ea-7d282653-8e6d-810dda18956d'}}, {'term': {'payload.FileStoreNotification.fileset.status': 'READY'}}]}}
-```
-
-The information you need is the **subscriptionID** in the log above. Please copy it for further use.
-
-The next step is polling message queue from existing subscription and specify destination folder using the **subscriptionID** above.
-
-```bash
-python fileNotiMessages.py -p -s <subscriptionId> -d <destination folder>
-```
-Example: 
-```bash
-python fileNotiMessages.py -p -s b6447a1a-da72-4fbd-b2f5-96185d72eb21 -d C:\msg_dist_python_tools\cfs_download
-```
-
-If you want to change the Bucket-name or Package Id, you can update the current **subscriptionID** with the updated JSON file like the following example:
-
-
-```bash
-python fileNotiMessages.py -m -s b6447a1a-da72-4fbd-b2f5-96185d72eb21 -i requestBody/multipleBucketFilter.json
-```
-
-**Caution**: If you still want a CFS file, please keep the **subscriptionID** (and update it if you want to change something) until you really want to stop download the CFS file.
-
-If you want to stop download the CFS file, you can delete the subscriptions with the following command:
-
-```bash
-python fileNotiMessages.py -u
-```
-You can find the list of all supported commands from [GitHub](https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools?tab=readme-ov-file#list-of-supported-commands) repository.
+Please follow the step-by-step guide on [GitHub](https://github.com/LSEG-API-Samples/FileNoti.Message.Distribution.Tools?tab=readme-ov-file#how-to-run-the-application) repository.
 
 ### <a id="troubleshooting"></a>Tools Troubleshooting
 
@@ -342,6 +120,12 @@ You can find the list of all supported commands from [GitHub](https://github.com
 **Error**: Error with "{"status":403,"message":"Access denied: Insufficient claims to access this resource"}" when running the tool.
 
 **Answer**: This error message means your RDP account does not have permission to access the RDP CFS API for your desire bucket. Please contact your LSEG representative to verify your permission.
+
+## <a href="conclusion"></a>Conclusion
+
+That brings me to the end of File Notification Message Distribution with CFS service project. The Message Distribution service is a powerful service that allows consumers to receive content changes notification of non-real-time content from the message queue-based interfaces. Powered by [Amazon SQS](https://aws.amazon.com/sqs/) (*as of January 2024*), developers can create a consumer application to connect to the Service with various programming languages using [AWS SDK](https://aws.amazon.com/developer/tools/). Combined with Client File Store (CFS) service, the File Notification Message Distribution service lets consumers receive notification when the interested CFS file is available and be able to download that file without manually tasks.
+
+At the same time, the [Refinitiv Data Platform (RDP) APIs](https://developers.lseg.com/en/api-catalog/refinitiv-data-platform/refinitiv-data-platform-apis) provide various LSEG data and content for developers via an easy-to-use Web-based API. The APIs are easy to integrate into any application and platform that supports the HTTP protocol and JSON message format. 
 
 ## <a id="references"></a>References
 
